@@ -1,0 +1,44 @@
+[global]
+        netbios name = SAMBACLUSTER
+        realm = {{ ad_domain|upper }}
+        workgroup = {{ ad_domain|upper|regex_replace('^([^\\.]*).*$', '\\1') }}
+        security = ADS
+        log file = /var/log/samba/log.%m
+        max log size = 50
+        server max protocol = SMB3
+        clustering = Yes
+        load printers = No
+        disable spoolss = Yes
+        show add printer wizard = No
+        stat cache = No
+        winbind enum users = Yes
+        winbind enum groups = Yes
+        winbind use default domain = Yes
+        idmap config {{ ad_domain|upper|regex_replace('^([^\\.]*).*$', '\\1') }}:range = 500-40000
+        idmap config {{ ad_domain|upper|regex_replace('^([^\\.]*).*$', '\\1') }}:backend = autorid
+        idmap config *:range = 70001-80000
+        idmap config * : backend = tdb
+        printing = bsd
+        cups options = raw
+        print command = lpr -r -P'%p' %s
+        lpq command = lpq -P'%p'
+        lprm command = lprm -P'%p' %j
+        map archive = No
+        map readonly = no
+        store dos attributes = Yes
+        kernel share modes = No
+        debug pid = yes
+#       log level = 10 ldb:1
+#       panic action =
+
+[share1]
+        comment = GlusterFS Share
+        path = /
+        read only = No
+        guest ok = Yes
+        kernel share modes = No
+        vfs objects = glusterfs
+        glusterfs:loglevel = 7
+        glusterfs:logfile = /var/log/glusterfs/glusterfs-share.log
+        glusterfs:volume = share
+

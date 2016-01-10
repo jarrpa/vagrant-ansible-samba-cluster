@@ -1,0 +1,125 @@
+---
+# file: storage_servers.yml
+- hosts: storage_servers
+  name: Initializing
+  sudo: yes
+
+  tasks:
+    - name: Detect guest OS family
+      group_by: key={{ ansible_os_family }}
+      changed_when: False
+
+    - name: Set hostname
+      hostname: "name={{ inventory_hostname }}{% if ad_domain is defined %}.{{ ad_domain }}{% endif %}"
+
+    - name: Create extra disk partitions
+      shell: "{ blkid | grep -q /dev/{{item[0].dev}}{{item[1].num}} && echo FOUND; } || { parted /dev/{{item[0].dev}} mklabel msdos && parted /dev/{{item[0].dev}} mkpart primary 512 {{item[1].size}}; }"
+      register: part_result
+      changed_when: "'FOUND' not in part_result.stdout"
+      with_subelements:
+        - extra_disks
+        - parts
+      when: extra_disks is defined
+
+    - name: Create extra disk filesystems
+      filesystem: fstype={{item[1].fs}} dev=/dev/{{item[0].dev}}{{item[1].num}}
+      with_subelements:
+        - extra_disks
+        - parts
+      when: extra_disks is defined
+
+    - name: Mount extra disk filesystems
+      mount: name={{item[1].mount}} src=/dev/{{item[0].dev}}{{item[1].num}} fstype={{item[1].fs}} state=mounted
+      with_subelements:
+        - extra_disks
+        - parts
+      when: extra_disks is defined
+
+- hosts: RedHat
+  name: Server Setup (RedHat)
+  sudo: yes
+  gather_facts: False
+
+  tasks:
+    - include: roles/common/tasks/setup-RedHat.yml
+    - include: roles/glusterfs/tasks/setup-RedHat.yml
+
+- hosts: storage_servers
+  name: GlusterFS Setup 
+  sudo: yes 
+
+  roles:
+#    - common
+    - glusterfs
+
+  vars:
+    - firewall_services:
+      - ssh
+      - glusterfs
+      - samba
+      - samba-client
+    - firewall_ports:
+      - '4379/tcp'
+    - firewall_interfaces:
+      - 'eth0'
+      - 'eth1'
+
+    # Gluster configuration.
+    - gluster_bricks_dir: /data/bricks
+    - gluster_default_cluster: "{%- for host in groups['storage_servers'] -%}{{hostvars[host]['ansible_eth0']['ipv4']['address']}}{% if not loop.last %},{% endif %}{%- endfor -%}"
+    - gluster_default_replica: "{{ 3 if groups['storage_servers']|count >= 3 else (2 if groups['storage_servers']|count == 2 else omit) }}"
+    - gluster_volumes:
+        - { name: 'share' }
+        - { name: 'ctdb', replica: "{{ groups['storage_servers']|count if groups['storage_servers']|count > 1 else omit }}" }
+
+  tasks:
+    - selinux: state=disabled
+
+    - name: Ensure Gluster brick directories exist.
+      file: "path={{ [gluster_bricks_dir, item.name]|join('/') }} state=directory mode=0775"
+      with_items: "{{ gluster_volumes }}"
+
+    - name: Configure Gluster volumes.
+      gluster_volume:
+        state: present
+        name: "{{ item.name }}"
+        brick: "{{ [gluster_bricks_dir, item.name]|join('/') }}"
+        replicas: "{{ item.replica | default(gluster_default_replica) }}" 
+        cluster: "{{ item.cluster | default(gluster_default_cluster) }}"
+        force: yes
+      run_once: true
+      with_items: "{{ gluster_volumes }}"
+
+    - name: Start Gluster volumes.
+      gluster_volume:
+        name: "{{ item.name }}"
+        state: started
+      run_once: true
+      with_items: "{{ gluster_volumes }}"
+
+- hosts: storage_servers
+  name: SMB Server Configuration
+  sudo: yes
+
+  tasks:
+    - name: Creates directories
+      file: path={{item}} state=directory
+      with_items:
+        - '/etc/samba'
+        - '/etc/ctdb'
+
+    - name: Copy Samba/CTDB config files
+      template: src={{item.src}} dest={{item.dest}} owner=root group=root mode=0744
+      with_items:
+        - { src: 'files/smb.conf.j2', dest: '/etc/samba/smb.conf' }
+        - { src: 'files/nodes.j2', dest: '/etc/ctdb/nodes' }
+        - { src: 'files/ctdb', dest: '/etc/sysconfig/ctdb' }
+
+- hosts: storage_servers
+  name: Active Directory Configuration
+  sudo: yes
+  gather_facts: False
+
+  tasks:
+    - include: roles/samba/tasks/setup-AD.yml
+      when: setup_ad
