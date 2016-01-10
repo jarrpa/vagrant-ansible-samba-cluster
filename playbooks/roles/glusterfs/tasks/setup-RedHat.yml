@@ -1,0 +1,19 @@
+---
+- name: Fetch GlusterFS repo file
+  get_url: dest=/etc/yum.repos.d/glusterfs-fedora.repo
+           url=http://download.gluster.org/pub/gluster/glusterfs/LATEST/Fedora/glusterfs-fedora.repo
+
+- name: Set GlusterFS repo file permissions
+  file: owner=root group=root mode=0644
+        path=/etc/yum.repos.d/glusterfs-fedora.repo
+  
+- name: Import GlusterFS GPG key.
+  rpm_key:
+    key: "http://download.gluster.org/pub/gluster/glusterfs/LATEST/pub.key"
+    state: present
+
+- name: Ensure GlusterFS is installed.
+  yum: "name={{ item }} state=installed"
+  with_items:
+    - glusterfs-server
+    - glusterfs-client

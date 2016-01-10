@@ -1,0 +1,9 @@
+---
+- hosts: all
+  name: Raw Installation (RedHat/Fedora)
+  sudo: yes
+  gather_facts: False
+
+  tasks:
+    - name: Make sure playbook dependencies are installed
+      raw: "dnf install -y yum python python-simplejson yum libselinux-python xfsprogs gnupg"

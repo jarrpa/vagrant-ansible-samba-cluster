@@ -1,0 +1,4 @@
+---
+- include_vars: SMB.yml
+
+- include: conf-SMB.yml
