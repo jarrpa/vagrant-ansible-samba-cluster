@@ -41,6 +41,10 @@ settings = {
       { :ip => "192.168.121.112" },
     ],
   },
+  :groups => {
+    :samba_servers => [ "all" ],
+    :gluster_servers => [ "all" ],
+  },
   :samba => {
     :setup_samba => true,
     :config => nil,
@@ -53,6 +57,14 @@ settings = {
     :setup_ad => false,
     :domain => "domain.com",
     :dns => "0.0.0.0",
+  },
+  :gluster => {
+    :setup_gluster => true,
+    :bricks_dir => "/data/bricks",
+    :volumes => [
+        { name: 'share' },
+        { name: 'ctdb', replica: "n", mount: "/shared/lock" },
+      ],
   },
 }
 
@@ -84,9 +96,11 @@ end
 
 vms = settings[:vms]
 vms_common = settings[:vms_common]
+groups = settings[:groups]
 samba = settings[:samba]
 ctdb = settings[:ctdb]
 ad = settings[:ad]
+gluster = settings[:gluster]
 
 #==============================================================================
 #
@@ -124,6 +138,23 @@ end
 
 if ENV['VAGRANT_LOG'] == 'debug'
   p "active_vms: #{active_vms}"
+end
+
+groups.each_pair do |name,group|
+  if group.include? "all"
+    groups[name] = active_vms
+  else
+    group.each do |node|
+      case node
+      when "first"
+        node = active_vms[0]
+      when "last"
+        node = active_vms[-1]
+      when node.is_a?(Integer)
+        node = active_vms[node]
+      end
+    end
+  end
 end
 
 #==============================================================================
@@ -188,13 +219,15 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 #          ansible.verbose = "vvv"
           ansible.playbook = playbook
           ansible.groups = {
-            "storage_servers" => active_vms,
+            "samba_servers"   => groups[:samba_servers] == "all" ? active_vms : groups[:samba_servers],
+            "gluster_servers" => groups[:gluster_servers] == "all" ? active_vms : groups[:gluster_servers],
           }
           ansible.extra_vars = {
             "vips"        => vms_common[:virtual_ips],
             "samba"       => samba,
             "ctdb"        => ctdb,
             "ad"          => ad,
+            "gluster"     => gluster,
           }
           ansible.limit = "all"
         end

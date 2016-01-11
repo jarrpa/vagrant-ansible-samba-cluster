@@ -1,6 +1,6 @@
 ---
-# file: storage_servers.yml
-- hosts: storage_servers
+# file: samba_servers.yml
+- hosts: all
   name: Initializing
   sudo: yes
 
@@ -21,10 +21,28 @@
   gather_facts: False
 
   tasks:
-    - include: roles/common/tasks/setup-RedHat.yml
+#    - include: roles/common/tasks/setup-RedHat.yml
 
-- hosts: storage_servers
-  name: SMB Server Configuration
+- hosts: none
+  name: Server Setup (Common)
+  sudo: yes
+
+  roles:
+    - common
+
+  vars:
+    - firewall_services:
+      - ssh
+      - samba
+      - samba-client
+    - firewall_ports:
+      - '4379/tcp'
+    - firewall_interfaces:
+      - 'eth0'
+      - 'eth1'
+
+- hosts: samba_servers
+  name: Server Setup (SMB)
   sudo: yes
 
   roles:
