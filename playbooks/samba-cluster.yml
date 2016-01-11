@@ -102,12 +102,8 @@
   name: SMB Server Configuration
   sudo: yes
 
-  tasks:
-    - name: Creates directories
-      file: path={{item}} state=directory
-      with_items:
-        - '/etc/samba'
-        - '/etc/ctdb'
+  roles:
+    - samba
 
   tasks:
     - name: Copy CTDB config files
@@ -121,13 +117,8 @@
     - name: Copy Samba config files
       template: src={{item.src}} dest={{item.dest}} owner=root group=root mode=0744
       with_items:
-        - { src: 'files/smb.conf.j2', dest: '/etc/samba/smb.conf' }
+        - { src: "{% if samba['config'] is defined and samba['config'] %}{{ samba['config'] }}{% else %}'files/smb.conf.j2'{% endif %}", dest: '/etc/samba/smb.conf' }
+      when: samba['setup_samba'] is defined and samba['setup_samba']
 
-- hosts: storage_servers
-  name: Active Directory Configuration
-  sudo: yes
-  gather_facts: False
-
-  tasks:
     - include: roles/samba/tasks/setup-AD.yml
-      when: setup_ad
+      when: ad['setup_ad']

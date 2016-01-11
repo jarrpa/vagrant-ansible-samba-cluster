@@ -51,14 +51,18 @@ settings = {
       { :ip => "192.168.121.112" },
     ],
   },
+  :samba => {
+    :setup_samba => true,
+    :config => nil,
+  },
   :ctdb => {
     :setup_ctdb => true,
     :config => nil,
   },
   :ad => {
     :setup_ad => false,
-    :ad_domain => "domain.com",
-    :ad_dns => "0.0.0.0",
+    :domain => "domain.com",
+    :dns => "0.0.0.0",
   },
 }
 
@@ -90,6 +94,7 @@ end
 
 vms = settings[:vms]
 vms_common = settings[:vms_common]
+samba = settings[:samba]
 ctdb = settings[:ctdb]
 ad = settings[:ad]
 
@@ -222,10 +227,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
           ansible.extra_vars = {
             "extra_disks" => vms_common[:disks],
             "vips"        => vms_common[:virtual_ips],
-            "setup_ad"    => ad[:setup_ad],
-            "ad_domain"   => ad[:ad_domain],
-            "ad_dns"      => ad[:ad_dns],
+            "samba"       => samba,
             "ctdb"        => ctdb,
+            "ad"          => ad,
           }
           ansible.limit = "all"
         end
