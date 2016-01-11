@@ -1,6 +1,6 @@
 ---
-# file: storage_servers.yml
-- hosts: storage_servers
+# file: samba_servers.yml
+- hosts: all
   name: Initializing
   sudo: yes
 
@@ -44,16 +44,16 @@
   gather_facts: False
 
   tasks:
-    - include: roles/common/tasks/setup-RedHat.yml
+#    - include: roles/common/tasks/setup-RedHat.yml
     - include: roles/glusterfs/tasks/setup-RedHat.yml
+      when: gluster['setup_gluster']
 
-- hosts: storage_servers
-  name: GlusterFS Setup 
-  sudo: yes 
+- hosts: none
+  name: Server Setup (Common)
+  sudo: yes
 
   roles:
-#    - common
-    - glusterfs
+    - common
 
   vars:
     - firewall_services:
@@ -67,39 +67,47 @@
       - 'eth0'
       - 'eth1'
 
-    # Gluster configuration.
-    - gluster_bricks_dir: /data/bricks
-    - gluster_default_cluster: "{%- for host in groups['storage_servers'] -%}{{hostvars[host]['ansible_eth0']['ipv4']['address']}}{% if not loop.last %},{% endif %}{%- endfor -%}"
-    - gluster_default_replica: "{{ 3 if groups['storage_servers']|count >= 3 else (2 if groups['storage_servers']|count == 2 else omit) }}"
-    - gluster_volumes:
-        - { name: 'share' }
-        - { name: 'ctdb', replica: "{{ groups['storage_servers']|count if groups['storage_servers']|count > 1 else omit }}" }
+- hosts: gluster_servers
+  name: GlusterFS Setup
+  sudo: yes
+
+  roles:
+    - glusterfs
+
+  vars:
+    - gluster_default_cluster: "{%- for host in groups['gluster_servers'] -%}{{hostvars[host]['ansible_eth0']['ipv4']['address']}}{% if not loop.last %},{% endif %}{%- endfor -%}"
+    - gluster_default_replica: "{{ 3 if groups['gluster_servers']|count >= 3 else (2 if groups['gluster_servers']|count == 2 else omit) }}"
 
   tasks:
     - name: Ensure Gluster brick directories exist.
-      file: "path={{ [gluster_bricks_dir, item.name]|join('/') }} state=directory mode=0775"
-      with_items: "{{ gluster_volumes }}"
+      file: "path={{ [gluster['bricks_dir'], item.name]|join('/') }} state=directory mode=0775"
+      with_items: "{{ gluster['volumes'] }}"
 
     - name: Configure Gluster volumes.
       gluster_volume:
         state: present
         name: "{{ item.name }}"
-        brick: "{{ [gluster_bricks_dir, item.name]|join('/') }}"
-        replicas: "{{ item.replica | default(gluster_default_replica) }}" 
+        brick: "{{ [gluster['bricks_dir'], item.name]|join('/') }}"
+        replicas: >
+          {% if item.replica is defined and item.replica == 'n' -%}
+            {{ groups['gluster_servers']|count if groups['gluster_servers']|count > 1 else omit }}
+          {%- else -%}
+            {{ item.replica | default(gluster_default_replica) }}
+          {%- endif %}
         cluster: "{{ item.cluster | default(gluster_default_cluster) }}"
         force: yes
       run_once: true
-      with_items: "{{ gluster_volumes }}"
+      with_items: "{{ gluster['volumes'] }}"
 
     - name: Start Gluster volumes.
       gluster_volume:
         name: "{{ item.name }}"
         state: started
       run_once: true
-      with_items: "{{ gluster_volumes }}"
+      with_items: "{{ gluster['volumes'] }}"
 
-- hosts: storage_servers
-  name: SMB Server Configuration
+- hosts: samba_servers
+  name: Server Setup (SMB)
   sudo: yes
 
   roles:
