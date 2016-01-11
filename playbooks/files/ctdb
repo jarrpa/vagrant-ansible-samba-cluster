@@ -1,4 +1,4 @@
 CTDB_NODES=/etc/ctdb/nodes
-CTDB_RECOVERY_LOCK=/gluster/lock/lockfile
-CTDB_MANAGES_SAMBA="no"
-CTDB_MANAGES_WINBIND="no"
+CTDB_RECOVERY_LOCK=/shared/lock/lockfile
+CTDB_MANAGES_SAMBA="yes"
+CTDB_MANAGES_WINBIND="yes"
