@@ -94,13 +94,13 @@ File.open(f, 'w') do |file|
   file.write settings.to_yaml
 end
 
-vms = settings[:vms]
+vms        = settings[:vms]
 vms_common = settings[:vms_common]
-groups = settings[:groups]
-samba = settings[:samba]
-ctdb = settings[:ctdb]
-ad = settings[:ad]
-gluster = settings[:gluster]
+groups     = settings[:groups]
+samba      = settings[:samba]
+ctdb       = settings[:ctdb]
+ad         = settings[:ad]
+gluster    = settings[:gluster]
 
 #==============================================================================
 #
