@@ -12,6 +12,9 @@
     - name: Set hostname
       hostname: "name={{ inventory_hostname }}{% if ad_domain is defined %}.{{ ad_domain }}{% endif %}"
 
+    - name: Disable SELinux
+      selinux: state=disabled
+
     - name: Create extra disk partitions
       shell: "{ blkid | grep -q /dev/{{item[0].dev}}{{item[1].num}} && echo FOUND; } || { parted /dev/{{item[0].dev}} mklabel msdos && parted /dev/{{item[0].dev}} mkpart primary 512 {{item[1].size}}; }"
       register: part_result
@@ -73,8 +76,6 @@
         - { name: 'ctdb', replica: "{{ groups['storage_servers']|count if groups['storage_servers']|count > 1 else omit }}" }
 
   tasks:
-    - selinux: state=disabled
-
     - name: Ensure Gluster brick directories exist.
       file: "path={{ [gluster_bricks_dir, item.name]|join('/') }} state=directory mode=0775"
       with_items: "{{ gluster_volumes }}"
