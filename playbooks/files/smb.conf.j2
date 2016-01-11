@@ -1,7 +1,7 @@
 [global]
         netbios name = SAMBACLUSTER
-        realm = {{ ad_domain|upper }}
-        workgroup = {{ ad_domain|upper|regex_replace('^([^\\.]*).*$', '\\1') }}
+        realm = {{ ad['domain']|upper }}
+        workgroup = {{ ad['domain']|upper|regex_replace('^([^\\.]*).*$', '\\1') }}
         security = ADS
         log file = /var/log/samba/log.%m
         max log size = 50
@@ -14,8 +14,8 @@
         winbind enum users = Yes
         winbind enum groups = Yes
         winbind use default domain = Yes
-        idmap config {{ ad_domain|upper|regex_replace('^([^\\.]*).*$', '\\1') }}:range = 500-40000
-        idmap config {{ ad_domain|upper|regex_replace('^([^\\.]*).*$', '\\1') }}:backend = autorid
+        idmap config {{ ad['domain']|upper|regex_replace('^([^\\.]*).*$', '\\1') }}:range = 500-40000
+        idmap config {{ ad['domain']|upper|regex_replace('^([^\\.]*).*$', '\\1') }}:backend = autorid
         idmap config *:range = 70001-80000
         idmap config * : backend = tdb
         printing = bsd
