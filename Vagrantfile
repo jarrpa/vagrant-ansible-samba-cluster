@@ -36,9 +36,14 @@ settings = {
     :synced_folders => [
       { :src => "lock/", :dest => "/shared/lock" },
     ],
+    :virtual_ips => [
+      { :ip => "192.168.121.111" },
+      { :ip => "192.168.121.112" },
+    ],
   },
   :ctdb => {
-    :virtual_ips => [ "192.168.121.111", "192.168.121.112", ],
+    :setup_ctdb => true,
+    :config => nil,
   },
   :ad => {
     :setup_ad => false,
@@ -181,10 +186,11 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
             "storage_servers" => active_vms,
           }
           ansible.extra_vars = {
-            "vips"        => ctdb[:virtual_ips],
+            "vips"        => vms_common[:virtual_ips],
             "setup_ad"    => ad[:setup_ad],
             "ad_domain"   => ad[:ad_domain],
             "ad_dns"      => ad[:ad_dns],
+            "ctdb"        => ctdb,
           }
           ansible.limit = "all"
         end
