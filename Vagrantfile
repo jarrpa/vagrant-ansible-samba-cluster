@@ -165,10 +165,12 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         domain.cpus = vms_common[:cpus]
       end
 
-      vms_common[:disks].each_with_index do |disk|
-        node.vm.provider :libvirt do |lv|
-          lv.storage :file, :size => "#{disk[:size]}G", :device => "#{disk[:dev_names][:libvirt]}"
-          disk[:dev] = disk[:dev_names][:libvirt]
+      if vms_common[:disks]
+        vms_common[:disks].each do |disk|
+          node.vm.provider :libvirt do |lv|
+            lv.storage :file, :size => "#{disk[:size]}G", :device => "#{disk[:dev_names][:libvirt]}"
+            disk[:dev] = disk[:dev_names][:libvirt]
+          end
         end
       end
 
