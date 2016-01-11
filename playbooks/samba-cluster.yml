@@ -12,6 +12,9 @@
     - name: Set hostname
       hostname: "name={{ inventory_hostname }}{% if ad_domain is defined %}.{{ ad_domain }}{% endif %}"
 
+    - name: Disable SELinux
+      selinux: state=disabled
+
 - hosts: RedHat
   name: Server Setup (RedHat)
   sudo: yes
