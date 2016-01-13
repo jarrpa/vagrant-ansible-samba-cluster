@@ -13,7 +13,4 @@
     state: present
 
 - name: Ensure GlusterFS is installed.
-  yum: "name={{ item }} state=installed"
-  with_items:
-    - glusterfs-server
-    - glusterfs-client
+  yum: "name=glusterfs-server,glusterfs-client state=installed"
