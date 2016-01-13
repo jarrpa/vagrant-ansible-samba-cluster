@@ -172,14 +172,18 @@ groups.each_pair do |name,group|
   if group.include? "all"
     groups[name] = active_vms
   else
-    group.each do |node|
+    group.each_with_index do |node,i|
       case node
       when "first"
-        node = active_vms[0]
+        groups[name][i] = active_vms[0]
       when "last"
-        node = active_vms[-1]
+        groups[name][i] = active_vms[-1]
+      when "not first"
+        groups[name][i] = active_vms.count > 1 ? active_vms[1..-1] : active_vms[0]
+      when "not last"
+        groups[name][i] = active_vms.count > 1 ? active_vms[0..-2] : active_vms[0]
       when node.is_a?(Integer)
-        node = active_vms[node]
+        groups[name][i] = active_vms[node]
       end
     end
   end
