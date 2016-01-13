@@ -149,7 +149,11 @@ if ARGV[0] == "up"
   if cmd_names.length > 0 then
     active_vms.push(*cmd_names)
   else
-    vms.each { |x| active_vms << x[:name] }
+    vms.each do |x|
+      if not active_vms.include?(x[:name])
+        active_vms << x[:name]
+      end
+    end
   end
 elsif ARGV[0] == "destroy" or ARGV[0] == "halt"
   cmd_names = ARGV.drop(1).delete_if { |x| x.start_with?("-") or not active_vms.include?(x) }
@@ -160,7 +164,7 @@ elsif ARGV[0] == "destroy" or ARGV[0] == "halt"
   end
 end
 
-File.open(f, 'w') do |file|
+File.open(f, 'w+') do |file|
   file.write active_vms.to_yaml
 end
 
@@ -179,9 +183,9 @@ groups.each_pair do |name,group|
       when "last"
         groups[name][i] = active_vms[-1]
       when "not first"
-        groups[name] = active_vms.count > 1 ? active_vms[1..-1] : active_vms[0]
+        groups[name] = active_vms.count > 1 ? active_vms[1..-1] : [ active_vms[0] ]
       when "not last"
-        groups[name] = active_vms.count > 1 ? active_vms[0..-2] : active_vms[0]
+        groups[name] = active_vms.count > 1 ? active_vms[0..-2] : [ active_vms[0] ]
       when node.is_a?(Integer)
         groups[name][i] = active_vms[node]
       end
@@ -264,8 +268,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         node.vm.provision "ansible" do |ansible|
 #          ansible.verbose = "vvv"
           ansible.playbook = playbook
+          ansible.groups = {}
           groups.each_pair do |name,group|
-            ansible.groups[name] = group
+            ansible.groups[name.to_s] = group
           end
           ansible.extra_vars = {
             "extra_disks" => vms_common[:disks],
