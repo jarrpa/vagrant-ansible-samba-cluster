@@ -10,7 +10,7 @@
       changed_when: False
 
     - name: Set hostname
-      hostname: "name={{ inventory_hostname }}{% if ad_domain is defined %}.{{ ad_domain }}{% endif %}"
+      hostname: "name={{ inventory_hostname }}{% if ad['domain'] is defined and ad['domain'] %}.{{ ad['domain'] }}{% endif %}"
 
     - name: Disable SELinux
       selinux: state=disabled
