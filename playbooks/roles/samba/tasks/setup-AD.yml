@@ -46,7 +46,7 @@
   shell: sed -ri '/^(passwd|group)/s/$/ winbind/' /etc/nsswitch.conf
 
 - name: Join Active Directory domain
-  shell: net join -U Administrator%redhat
+  shell: "net join -U Administrator%{{ ad_passwd }}"
   run_once: true
   delegate_to: "{{ groups['samba_servers'][0] }}"
 
