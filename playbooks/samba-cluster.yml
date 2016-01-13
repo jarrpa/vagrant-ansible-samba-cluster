@@ -128,5 +128,10 @@
         - { src: "{% if samba['config'] is defined and samba['config'] %}{{ samba['config'] }}{% else %}'files/smb.conf.j2'{% endif %}", dest: '/etc/samba/smb.conf' }
       when: samba['setup_samba'] is defined and samba['setup_samba']
 
+- hosts: ad_server
+  name: Active Directory Setup
+  sudo: yes
+
+  tasks:
     - include: roles/samba/tasks/setup-AD.yml
       when: ad['setup_ad']
