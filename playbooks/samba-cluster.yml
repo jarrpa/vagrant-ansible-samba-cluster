@@ -10,7 +10,7 @@
       changed_when: False
 
     - name: Set hostname
-      hostname: "name={{ inventory_hostname }}{% if ad_domain is defined %}.{{ ad_domain }}{% endif %}"
+      hostname: "name={{ inventory_hostname }}{% if ad['domain'] is defined and ad['domain'] %}.{{ ad['domain'] }}{% endif %}"
 
     - name: Disable SELinux
       selinux: state=disabled
@@ -75,7 +75,7 @@
     - glusterfs
 
   vars:
-    - gluster_default_cluster: "{%- for host in groups['gluster_servers'] -%}{{hostvars[host]['ansible_eth0']['ipv4']['address']}}{% if not loop.last %},{% endif %}{%- endfor -%}"
+    - gluster_default_cluster: "{%- for host in groups['gluster_servers'] -%}{{hostvars[host]['ansible_hostname']}}{% if not loop.last %},{% endif %}{%- endfor -%}"
     - gluster_default_replica: "{{ 3 if groups['gluster_servers']|count >= 3 else (2 if groups['gluster_servers']|count == 2 else omit) }}"
 
   tasks:
