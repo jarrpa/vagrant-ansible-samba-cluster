@@ -188,6 +188,9 @@ groups.each_pair do |name,group|
     end
   end
 end
+if ad[:setup_ad] and not groups.keys.include? "ad_server"
+  groups[:ad_server] = group[:samba_servers][0]
+end
 
 #==============================================================================
 #
@@ -261,12 +264,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         node.vm.provision "ansible" do |ansible|
 #          ansible.verbose = "vvv"
           ansible.playbook = playbook
-          ansible.groups = {
-            "samba_servers"   => groups[:samba_servers],
-            "gluster_servers" => groups[:gluster_servers],
-          }
-          if ad[:setup_ad]
-            ansible.groups['ad_server'] = groups[:samba_servers] ? group[:samba_servers][0] : nil
+          groups.each_pair do |name,group|
+            ansible.groups[name] = group
           end
           ansible.extra_vars = {
             "extra_disks" => vms_common[:disks],
