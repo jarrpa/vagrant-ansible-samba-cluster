@@ -6,4 +6,8 @@
 
   tasks:
     - name: Make sure playbook dependencies are installed
-      raw: "dnf install -y yum python python-simplejson yum libselinux-python xfsprogs gnupg"
+      raw: >
+        for REPO in `find /vagrant/playbooks -name '*.repo'`; do
+          cp $REPO /etc/yum.repos.d/;
+        done;
+        dnf install -y {{ install_pkgs }}

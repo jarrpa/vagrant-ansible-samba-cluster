@@ -45,8 +45,8 @@
 
   tasks:
 #    - include: roles/common/tasks/setup-RedHat.yml
-    - include: roles/glusterfs/tasks/setup-RedHat.yml
-      when: gluster['setup_gluster']
+#    - include: roles/glusterfs/tasks/setup-RedHat.yml
+#      when: gluster['setup_gluster']
 
 - hosts: none
   name: Server Setup (Common)
@@ -112,8 +112,8 @@
   name: Server Setup (SMB)
   sudo: yes
 
-  roles:
-    - samba
+#  roles:
+#    - samba
 
   tasks:
     - name: Copy CTDB config files
