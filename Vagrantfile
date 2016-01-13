@@ -152,9 +152,9 @@ groups.each_pair do |name,group|
       when "last"
         groups[name][i] = active_vms[-1]
       when "not first"
-        groups[name][i] = active_vms.count > 1 ? active_vms[1..-1] : active_vms[0]
+        groups[name] = active_vms.count > 1 ? active_vms[1..-1] : active_vms[0]
       when "not last"
-        groups[name][i] = active_vms.count > 1 ? active_vms[0..-2] : active_vms[0]
+        groups[name] = active_vms.count > 1 ? active_vms[0..-2] : active_vms[0]
       when node.is_a?(Integer)
         groups[name][i] = active_vms[node]
       end
@@ -228,8 +228,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 #          ansible.verbose = "vvv"
           ansible.playbook = playbook
           ansible.groups = {
-            "samba_servers"   => groups[:samba_servers] == "all" ? active_vms : groups[:samba_servers],
-            "gluster_servers" => groups[:gluster_servers] == "all" ? active_vms : groups[:gluster_servers],
+            "samba_servers"   => groups[:samba_servers],
+            "gluster_servers" => groups[:gluster_servers],
           }
           ansible.extra_vars = {
             "vips"        => vms_common[:virtual_ips],
