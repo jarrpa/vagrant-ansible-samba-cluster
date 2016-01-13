@@ -98,6 +98,7 @@ end
 vms        = settings[:vms]
 vms_common = settings[:vms_common]
 groups     = settings[:groups]
+group_vars = settings[:group_vars]
 samba      = settings[:samba]
 ctdb       = settings[:ctdb]
 ad         = settings[:ad]
@@ -145,7 +146,7 @@ if ENV['VAGRANT_LOG'] == 'debug'
   p "active_vms: #{active_vms}"
 end
 
-groups.each_pair do |name,group|
+groups.each do |name,group|
   if group.include? "all"
     groups[name] = active_vms
   else
@@ -167,6 +168,40 @@ groups.each_pair do |name,group|
 end
 if ad[:setup_ad] and not groups.keys.include? "ad_server"
   groups[:ad_server] = group[:samba_servers][0]
+end
+
+group_def_pkgs = {
+  :samba_servers => " samba",
+  :gluster_servers => " glusterfs-server glusterfs-client",
+}
+if ctdb[:setup_ctdb]
+  group_def_pkgs[:samba_servers] << " ctdb"
+end
+if gluster[:setup_gluster]
+  group_def_pkgs[:samba_servers] << " samba-vfs-glusterfs"
+end
+
+install_pkgs = {}
+if active_vms.length > 0
+  active_vms.each do |name|
+    install_pkgs[name] = "yum python python-simplejson yum libselinux-python xfsprogs gnupg "
+    if vms_common['install_pkgs']
+      install_pkgs[name] << " " + vms_common['install_pkgs']
+    end
+  end
+  groups.each do |name,group|
+    group.each do |node|
+      install_pkgs[node] << group_def_pkgs[name]
+      if group_vars and group_vars[name]
+        install_pkgs[node] << " " + group_vars[name][:install_pkgs]
+      end
+    end
+  end
+  vms.each do |vm|
+    if vm['install_pkgs']
+      install_pkgs[name] << " " + vm['install_pkgs']
+    end
+  end
 end
 
 #==============================================================================
@@ -223,6 +258,14 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         print "AD Administrator password: "
         ad_passwd = STDIN.noecho(&:gets)
       end
+
+      install_pkgs.each do |host,pkgs|
+        vars = { 'install_pkgs' => pkgs }
+        File.open('playbooks/host_vars/' + host.to_s, 'w+') do |file|
+          file.write vars.to_yaml
+        end
+      end
+
       playbooks = []
       playbooks.push("playbooks/raw-f23.yml")
       custom_provision = "playbooks/custom.yml"
@@ -235,7 +278,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 #          ansible.verbose = "vvv"
           ansible.playbook = playbook
           ansible.groups = {}
-          groups.each_pair do |name,group|
+          groups.each do |name,group|
             ansible.groups[name.to_s] = group
           end
           ansible.extra_vars = {

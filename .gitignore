@@ -7,3 +7,4 @@ active_vms.yml
 active_vms.yaml
 vagrant.yaml*
 vagrant.yml*
+host_vars/
