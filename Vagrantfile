@@ -231,6 +231,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
             "samba_servers"   => groups[:samba_servers],
             "gluster_servers" => groups[:gluster_servers],
           }
+          if ad[:setup_ad]
+            ansible.groups['ad_server'] = groups[:samba_servers] ? group[:samba_servers][0] : nil
+          end
           ansible.extra_vars = {
             "vips"        => vms_common[:virtual_ips],
             "samba"       => samba,
