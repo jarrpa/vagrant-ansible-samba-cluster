@@ -98,6 +98,8 @@
         force: yes
       run_once: true
       with_items: "{{ gluster['volumes'] }}"
+      register: result
+      until: result|success
 
     - name: Start Gluster volumes.
       gluster_volume:
