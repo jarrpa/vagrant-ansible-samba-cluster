@@ -6,6 +6,7 @@ ENV['VAGRANT_DEFAULT_PROVIDER'] = 'libvirt'
 VAGRANTFILE_API_VERSION = "2"
 
 require 'yaml'
+require 'io/console'
 
 projectdir = File.expand_path File.dirname(__FILE__)
 
@@ -241,6 +242,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   if active_vms.length > 0 then
     config.vm.define active_vms[0], primary: true do |node|
+      if ad[:setup_ad]
+        print "AD Administrator password: "
+        ad_passwd = STDIN.noecho(&:gets)
+      end
       playbooks = []
       playbooks.push("playbooks/raw-f23.yml")
       custom_provision = "playbooks/custom.yml"
@@ -264,6 +269,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
             "ad"          => ad,
             "gluster"     => gluster,
           }
+          if ad[:setup_ad]
+            ansible.extra_vars['ad_passwd'] = ad_passwd
+          end
           ansible.limit = "all"
         end
       end
