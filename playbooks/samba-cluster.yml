@@ -70,3 +70,12 @@
   tasks:
     - include: roles/samba/tasks/setup-AD.yml
       when: ad['setup_ad']
+
+- hosts: all
+  name: Start Services
+  sudo: yes
+
+  tasks:
+    - name: Start Samba and Gluster services
+      service: "name={{ item }} state=started enabled=yes"
+      with_items: services
