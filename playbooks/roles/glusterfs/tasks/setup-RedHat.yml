@@ -13,4 +13,4 @@
     state: present
 
 - name: Ensure GlusterFS is installed.
-  yum: "name=glusterfs-server,glusterfs-client state=installed"
+  dnf: "name=glusterfs-server,glusterfs-client state=installed"
