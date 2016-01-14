@@ -10,4 +10,4 @@
         for REPO in `find /vagrant/playbooks -name '*.repo'`; do
           cp $REPO /etc/yum.repos.d/;
         done;
-        dnf install -y {{ install_pkgs }}
+        dnf install -y --best {{ install_pkgs }}

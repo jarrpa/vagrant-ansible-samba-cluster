@@ -282,6 +282,14 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
           node.vm.synced_folder src, dest, syncopts
         end
       end
+      if machine[:sync_folders]
+        machine[:sync_folders].each do |sync|
+          src = sync[:src]
+          dest = sync[:dest]
+          syncopts = sync.except(:src, :dest)
+          node.vm.synced_folder src, dest, syncopts
+        end
+      end
 
     end
   end
