@@ -145,7 +145,7 @@ if ARGV[0] == "up"
   else
     vms.each do |x|
       if not active_vms.include?(x[:name])
-        active_vms << x[:name]
+        active_vms.push x[:name]
       end
     end
   end
