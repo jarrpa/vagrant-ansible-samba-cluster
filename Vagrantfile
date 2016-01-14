@@ -204,7 +204,7 @@ install_pkgs = {}
 services = {}
 if active_vms.length > 0
   active_vms.each do |name|
-    install_pkgs[name] = "yum python python-simplejson yum libselinux-python xfsprogs gnupg "
+    install_pkgs[name] = "yum python python-dnf python-simplejson yum libselinux-python xfsprogs gnupg "
     if vms_common[:install_pkgs]
       install_pkgs[name] << " " + vms_common[:install_pkgs]
     end
