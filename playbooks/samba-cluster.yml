@@ -83,6 +83,14 @@
       file: "path={{ [gluster['bricks_dir'], item.name]|join('/') }} state=directory mode=0775"
       with_items: "{{ gluster['volumes'] }}"
 
+    - name: Probe Samba peers
+      command: gluster peer probe {{ item }}
+      with_items: "{{ groups['samba_servers'] }}"
+      run_once: true
+      delegate_to: "{{ groups['gluster_servers'][0] }}"
+      register: probe_result
+      changed_when: "'already' not in probe_result.stdout and 'localhost' not in probe_result.stdout"
+
     - name: Configure Gluster volumes.
       gluster_volume:
         state: present
@@ -97,6 +105,7 @@
         cluster: "{{ item.cluster | default(gluster_default_cluster) }}"
         force: yes
       run_once: true
+      delegate_to: "{{ groups['gluster_servers'][0] }}"
       with_items: "{{ gluster['volumes'] }}"
       register: result
       until: result|success
@@ -106,6 +115,7 @@
         name: "{{ item.name }}"
         state: started
       run_once: true
+      delegate_to: "{{ groups['gluster_servers'][0] }}"
       with_items: "{{ gluster['volumes'] }}"
 
 - hosts: samba_servers
