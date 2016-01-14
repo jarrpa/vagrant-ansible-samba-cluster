@@ -133,6 +133,34 @@ end
 
 #==============================================================================
 #
+# Define required software for groups
+#
+
+group_defs = {
+  :samba_servers => {
+    :pkgs => " samba samba-winbind",
+    :services => [],
+  },
+  :gluster_servers => {
+    :pkgs => " glusterfs-server glusterfs-client",
+    :services => [ "glusterd" ],
+  },
+}
+if ctdb[:setup_ctdb]
+  group_defs[:samba_servers][:pkgs] << "ctdb"
+  group_defs[:samba_servers][:services].push "ctdb"
+else
+  group_defs[:samba_servers][:services].push "smb"
+  group_defs[:samba_servers][:services].push "nmb"
+  group_defs[:samba_servers][:services].push "winbind"
+end
+if gluster[:setup_gluster]
+  group_defs[:samba_servers][:pkgs] << " samba-vfs-glusterfs"
+  group_defs[:samba_servers][:services].push "glusterd"
+end
+
+#==============================================================================
+#
 # active_vms - Keep track of currently running VMs, since vagrant won't tell
 #              us directly.
 #
@@ -173,6 +201,11 @@ if ENV['VAGRANT_LOG'] == 'debug'
   p "active_vms: #{active_vms}"
 end
 
+#==============================================================================
+#
+# Build group listings
+#
+
 groups.each do |name,group|
   if group.include? "all"
     groups[name] = active_vms
@@ -197,36 +230,44 @@ if ad[:setup_ad] and not groups.keys.include? "ad_server"
   groups[:ad_server] = group[:samba_servers][0]
 end
 
-group_def_pkgs = {
-  :samba_servers => " samba",
-  :gluster_servers => " glusterfs-server glusterfs-client",
-}
-if ctdb[:setup_ctdb]
-  group_def_pkgs[:samba_servers] << " ctdb"
-end
-if gluster[:setup_gluster]
-  group_def_pkgs[:samba_servers] << " samba-vfs-glusterfs"
-end
+#==============================================================================
+#
+# Collect packages to install and services to run
+#
 
 install_pkgs = {}
+services = {}
 if active_vms.length > 0
   active_vms.each do |name|
     install_pkgs[name] = "yum python python-simplejson yum libselinux-python xfsprogs gnupg "
     if vms_common[:install_pkgs]
       install_pkgs[name] << " " + vms_common[:install_pkgs]
     end
+
+    services[name] = []
+    if vms_common[:services]
+      services[name].push vms_common[:services]
+    end
   end
   groups.each do |name,group|
     group.each do |node|
-      install_pkgs[node] << group_def_pkgs[name]
-      if group_vars and group_vars[name]
+      install_pkgs[node] << group_defs[name][:pkgs]
+      if group_vars and group_vars[name] and group_vars[name][:install_pkgs]
         install_pkgs[node] << " " + group_vars[name][:install_pkgs]
+      end
+
+      services[node].push group_defs[name][:services]
+      if group_vars and group_vars[name] and group_vars[name][:services]
+        services[node].push group_vars[name][:services]
       end
     end
   end
   vms.each do |vm|
     if vm['install_pkgs']
       install_pkgs[name] << " " + vm['install_pkgs']
+    end
+    if vm['services']
+      services[name].push vm[:services]
     end
   end
 end
@@ -301,10 +342,12 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         ad_passwd = STDIN.noecho(&:gets)
       end
 
-      install_pkgs.each do |host,pkgs|
-        vars = { 'install_pkgs' => pkgs }
-        File.open('playbooks/host_vars/' + host.to_s, 'w+') do |file|
-          file.write vars.to_yaml
+      active_vms.each do |node|
+        host_vars = {}
+        host_vars['install_pkgs'] = install_pkgs[node]
+        host_vars['services'] = services[node]
+        File.open('playbooks/host_vars/' + node.to_s, 'w+') do |file|
+          file.write host_vars.to_yaml
         end
       end
 
