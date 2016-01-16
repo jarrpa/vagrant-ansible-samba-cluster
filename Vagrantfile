@@ -119,9 +119,9 @@ if ctdb[:setup_ctdb]
   group_defs[:samba_servers][:pkgs] << "ctdb"
   group_defs[:samba_servers][:services].push "ctdb"
 else
+  group_defs[:samba_servers][:services].push "winbind"
   group_defs[:samba_servers][:services].push "smb"
   group_defs[:samba_servers][:services].push "nmb"
-  group_defs[:samba_servers][:services].push "winbind"
 end
 
 #==============================================================================
