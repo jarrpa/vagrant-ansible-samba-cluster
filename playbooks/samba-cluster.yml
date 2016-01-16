@@ -122,6 +122,14 @@
       when: "'gluster_servers' in group_names"
       with_items: "{{ gluster['volumes'] }}"
 
+    - name: Set volume permissions
+      shell: "mount -t glusterfs localhost:/{{ item.name }} /mnt && chmod -c {{ item.root_mode|default('777') }} /mnt; umount /mnt"
+      with_items: "{{ gluster['volumes'] }}"
+      run_once: true
+      when: "'gluster_servers' in group_names"
+      register: perms_result
+      changed_when: "'changed' in perms_result.stdout"
+
 - hosts: samba_servers
   name: Server Setup (SMB)
   sudo: yes
