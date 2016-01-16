@@ -146,17 +146,17 @@ group_defs = {
     :services => [ "glusterd" ],
   },
 }
+if gluster[:setup_gluster]
+  group_defs[:samba_servers][:pkgs] << " samba-vfs-glusterfs"
+  group_defs[:samba_servers][:services].push "glusterd"
+end
 if ctdb[:setup_ctdb]
   group_defs[:samba_servers][:pkgs] << "ctdb"
   group_defs[:samba_servers][:services].push "ctdb"
 else
+  group_defs[:samba_servers][:services].push "winbind"
   group_defs[:samba_servers][:services].push "smb"
   group_defs[:samba_servers][:services].push "nmb"
-  group_defs[:samba_servers][:services].push "winbind"
-end
-if gluster[:setup_gluster]
-  group_defs[:samba_servers][:pkgs] << " samba-vfs-glusterfs"
-  group_defs[:samba_servers][:services].push "glusterd"
 end
 
 #==============================================================================
