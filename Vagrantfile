@@ -377,6 +377,12 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
           if ad[:setup_ad]
             ansible.extra_vars['ad_passwd'] = ad_passwd
           end
+          if vms_common[:extra_vars]
+            ansible.extra_vars.merge! vms_common[:extra_vars]
+          end
+          if ENV['EXTRA_VARS']
+            ansible.extra_vars.merge! eval ENV['EXTRA_VARS']
+          end
           ansible.limit = "all"
         end
       end
