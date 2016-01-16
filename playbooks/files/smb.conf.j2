@@ -36,17 +36,17 @@
 	store dos attributes = Yes
 	kernel share modes = No
 	debug pid = yes
-#	log level = 10 ldb:1
-#	panic action =
+{% if samba['config'] %}
+{% for opt in samba['config'] %}
+	{{ opt }} = {{ samba['config'][opt] }}
+{% endfor %}
+{% endif %}
 
-[share1]
-	comment = GlusterFS Share
-	path = /
-	read only = No
-	guest ok = Yes
-	kernel share modes = No
-	vfs objects = glusterfs
-	glusterfs:loglevel = 7
-	glusterfs:logfile = /var/log/glusterfs/glusterfs-share.log
-	glusterfs:volume = share
-
+{% if samba['shares'] %}
+{% for share in samba['shares'] %}
+[{{share}}]
+{% for opt in samba['shares'][share] %}
+	{{ opt }} = {{ samba['shares'][share][opt] }}
+{% endfor %}
+{% endfor %}
+{% endif %}

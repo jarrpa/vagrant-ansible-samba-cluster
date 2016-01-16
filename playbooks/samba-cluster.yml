@@ -149,7 +149,7 @@
     - name: Copy Samba config files
       template: src={{item.src}} dest={{item.dest}} owner=root group=root mode=0744
       with_items:
-        - { src: "{% if samba['config'] is defined and samba['config'] %}{{ samba['config'] }}{% else %}'files/smb.conf.j2'{% endif %}", dest: '/etc/samba/smb.conf' }
+        - { src: "files/smb.conf.j2", dest: '/etc/samba/smb.conf' }
       when: samba['setup_samba'] is defined and samba['setup_samba']
 
 - hosts: ad_server
