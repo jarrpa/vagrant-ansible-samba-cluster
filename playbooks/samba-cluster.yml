@@ -63,6 +63,12 @@
         - { src: "files/smb.conf.j2", dest: '/etc/samba/smb.conf' }
       when: samba['setup_samba'] is defined and samba['setup_samba']
 
+    - name: Setup vagrant Samba user
+      shell: "echo -e 'vagrant\nvagrant' | smbpasswd -a vagrant"
+      register: smbpasswd_result
+      changed_when: "'Added user vagrant.' in smbpasswd_result.stdout"
+      run_once: true
+
 - hosts: ad_server
   name: Active Directory Setup
   sudo: yes
