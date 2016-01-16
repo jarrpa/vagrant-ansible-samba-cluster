@@ -67,7 +67,7 @@
       - 'eth0'
       - 'eth1'
 
-- hosts: gluster_servers
+- hosts: gluster_servers:samba_servers
   name: GlusterFS Setup
   sudo: yes
 
@@ -82,12 +82,13 @@
     - name: Ensure Gluster brick directories exist.
       file: "path={{ [gluster['bricks_dir'], item.name]|join('/') }} state=directory mode=0775"
       with_items: "{{ gluster['volumes'] }}"
+      when: "'gluster_servers' in group_names"
 
     - name: Probe Samba peers
       command: gluster peer probe {{ item }}
       with_items: "{{ groups['samba_servers'] }}"
       run_once: true
-      delegate_to: "{{ groups['gluster_servers'][0] }}"
+      when: "'gluster_servers' in group_names"
       register: probe_result
       changed_when: "'already' not in probe_result.stdout and 'localhost' not in probe_result.stdout"
 
@@ -99,13 +100,16 @@
         replicas: >
           {% if item.replica is defined and item.replica == 'n' -%}
             {{ groups['gluster_servers']|count if groups['gluster_servers']|count > 1 else omit }}
+          {%- elif item.replica is defined and item.replica == 0 -%}
+            {{ omit }}
           {%- else -%}
             {{ item.replica | default(gluster_default_replica) }}
           {%- endif %}
         cluster: "{{ item.cluster | default(gluster_default_cluster) }}"
+        options: "{{ item.opts|default(omit) }}"
         force: yes
       run_once: true
-      delegate_to: "{{ groups['gluster_servers'][0] }}"
+      when: "'gluster_servers' in group_names"
       with_items: "{{ gluster['volumes'] }}"
       register: result
       until: result|success
@@ -115,7 +119,7 @@
         name: "{{ item.name }}"
         state: started
       run_once: true
-      delegate_to: "{{ groups['gluster_servers'][0] }}"
+      when: "'gluster_servers' in group_names"
       with_items: "{{ gluster['volumes'] }}"
 
 - hosts: samba_servers
