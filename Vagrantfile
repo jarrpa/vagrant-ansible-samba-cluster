@@ -138,20 +138,20 @@ end
 
 group_defs = {
   :samba_servers => {
-    :pkgs => " samba samba-winbind",
+    :install_pkgs => " samba samba-winbind",
     :services => [],
   },
   :gluster_servers => {
-    :pkgs => " glusterfs-server glusterfs-client",
+    :install_pkgs => " glusterfs-server glusterfs-client",
     :services => [ "glusterd" ],
   },
 }
 if gluster[:setup_gluster]
-  group_defs[:samba_servers][:pkgs] << " samba-vfs-glusterfs"
+  group_defs[:samba_servers][:install_pkgs] << " samba-vfs-glusterfs"
   group_defs[:samba_servers][:services].push "glusterd"
 end
 if ctdb[:setup_ctdb]
-  group_defs[:samba_servers][:pkgs] << "ctdb"
+  group_defs[:samba_servers][:install_pkgs] << "ctdb"
   group_defs[:samba_servers][:services].push "ctdb"
 else
   group_defs[:samba_servers][:services].push "winbind"
@@ -251,7 +251,7 @@ if active_vms.length > 0
   end
   groups.each do |name,group|
     group.each do |node|
-      install_pkgs[node] << group_defs[name][:pkgs]
+      install_pkgs[node] << group_defs[name][:install_pkgs]
       if group_vars and group_vars[name] and group_vars[name][:install_pkgs]
         install_pkgs[node] << " " + group_vars[name][:install_pkgs]
       end
