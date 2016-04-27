@@ -111,12 +111,15 @@ gluster    = settings[:gluster]
 
 group_defs = {
   :samba_servers => {
-    :install_pkgs => " samba samba-winbind",
+    :install_pkgs => " samba samba-winbind samba-winbind-clients",
     :services => [],
   },
+ :clients => {
+    :install_pkgs => " cifs-utils",
+ },
 }
 if ctdb[:setup_ctdb]
-  group_defs[:samba_servers][:install_pkgs] << "ctdb"
+  group_defs[:samba_servers][:install_pkgs] << " ctdb"
   group_defs[:samba_servers][:services].push "ctdb"
 else
   group_defs[:samba_servers][:services].push "winbind"
@@ -187,12 +190,18 @@ groups.each do |name,group|
         groups[name] = active_vms.count > 1 ? active_vms[0..-2] : [ active_vms[0] ]
       when node.is_a?(Integer)
         groups[name][i] = active_vms[node]
+      else
+        groups[name][i] = node
       end
     end
   end
 end
 if ad[:setup_ad] and not groups.keys.include? "ad_server"
   groups[:ad_server] = group[:samba_servers][0]
+end
+
+if ENV['VAGRANT_LOG'] == 'debug'
+  p "groups: #{groups}"
 end
 
 #==============================================================================
@@ -216,14 +225,13 @@ if active_vms.length > 0
   end
   groups.each do |name,group|
     group.each do |node|
-      install_pkgs[node] << group_defs[name][:install_pkgs]
-      if group_vars and group_vars[name] and group_vars[name][:install_pkgs]
-        install_pkgs[node] << " " + group_vars[name][:install_pkgs]
+      if group_defs and group_defs[name]
+        install_pkgs[node] << group_defs[name][:install_pkgs] if group_defs[name][:install_pkgs]
+        services[node].push group_defs[name][:services] if group_defs[name][:services]
       end
-
-      services[node].push group_defs[name][:services]
-      if group_vars and group_vars[name] and group_vars[name][:services]
-        services[node].push group_vars[name][:services]
+      if group_vars and group_vars[name]
+        install_pkgs[node] << " " + group_vars[name][:install_pkgs] if group_vars[name][:install_pkgs]
+        services[node].push group_vars[name][:services] if group_vars[name][:services]
       end
     end
   end
@@ -310,15 +318,25 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       end
 
       playbooks = []
-      playbooks.push("playbooks/raw-f23.yml")
-      custom_provision = "playbooks/custom.yml"
-      if File.exists?(custom_provision)
-        playbooks.push(custom_provision)
+      if ENV['RUN']
+        playbooks.push(ENV['RUN'])
+      else
+        playbooks.push("playbooks/raw-f23.yml")
+        custom_pre_provision = ENV['CUSTOM_PRE'] ? ENV['CUSTOM_PRE'] : "playbooks/custom_pre.yml"
+        if File.exists?(custom_pre_provision)
+          playbooks.push(custom_pre_provision)
+        end
+        playbooks.push("playbooks/samba-cluster.yml")
+        custom_post_provision = ENV['CUSTOM_POST'] ? ENV['CUSTOM_POST'] : "playbooks/custom_post.yml"
+        if File.exists?(custom_post_provision)
+          playbooks.push(custom_post_provision)
+        end
       end
-      playbooks.push("playbooks/samba-cluster.yml")
       playbooks.each do |playbook|
         node.vm.provision "ansible" do |ansible|
-#          ansible.verbose = "vvv"
+          if ENV['ANSIBLE_DEBUG']
+            ansible.verbose = ENV['ANSIBLE_DEBUG']
+          end
           ansible.playbook = playbook
           ansible.groups = {}
           groups.each do |name,group|

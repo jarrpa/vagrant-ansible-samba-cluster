@@ -41,6 +41,10 @@
       - 'eth0'
       - 'eth1'
 
+  tasks:
+    - name: Disable SELinux
+      selinux: state=disabled
+
 - hosts: samba_servers
   name: Server Setup (SMB)
   sudo: yes
@@ -63,11 +67,10 @@
         - { src: "files/smb.conf.j2", dest: '/etc/samba/smb.conf' }
       when: samba['setup_samba'] is defined and samba['setup_samba']
 
-    - name: Setup vagrant Samba user
-      shell: "echo -e 'vagrant\nvagrant' | smbpasswd -a vagrant"
-      register: smbpasswd_result
-      changed_when: "'Added user vagrant.' in smbpasswd_result.stdout"
-      run_once: true
+    - name: Ensure share directories exist
+      file: "path={{ samba['shares'][item]['path'] }} state=directory mode=0777"
+      with_items: "{{ samba['shares'] }}"
+      when: "samba['setup_samba'] is defined and samba['setup_samba'] and item and ('glusterfs:volume' not in samba['shares'][item].keys())"
 
 - hosts: ad_server
   name: Active Directory Setup
@@ -82,6 +85,13 @@
   sudo: yes
 
   tasks:
-    - name: Start Samba and Gluster services
-      service: "name={{ item }} state=started enabled=yes"
-      with_items: services
+    - name: Start services
+      service: "name={{ item }} state=restarted enabled=yes"
+      with_items: "{{ services }}"
+
+    - name: Setup vagrant Samba user
+      shell: "echo -e 'vagrant\nvagrant' | smbpasswd -a vagrant"
+      register: smbpasswd_result
+      when: samba['setup_samba'] is defined and samba['setup_samba']
+      changed_when: "'Added user vagrant.' in smbpasswd_result.stdout"
+      run_once: true

@@ -1,3 +1,4 @@
 {% for vip in vips %}
 {{ vip['ip'] }}{% if vip['mask'] is defined and vip['mask'] %}{% else %}/24{% endif %} {% if vip['dev'] is defined and vip['dev'] %}{% else %}eth0{% endif %}
+
 {% endfor %}
