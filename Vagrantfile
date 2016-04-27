@@ -151,7 +151,6 @@ group_defs = {
 }
 if gluster[:setup_gluster]
   group_defs[:samba_servers][:install_pkgs] << " samba-vfs-glusterfs"
-  group_defs[:samba_servers][:services].push "glusterd"
 end
 if ctdb[:setup_ctdb]
   group_defs[:samba_servers][:install_pkgs] << " ctdb"
