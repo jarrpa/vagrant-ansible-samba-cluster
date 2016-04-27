@@ -115,6 +115,7 @@ vms_common = settings[:vms_common]
 groups     = settings[:groups]
 group_vars = settings[:group_vars]
 samba      = settings[:samba]
+ganesha    = settings[:ganesha]
 ctdb       = settings[:ctdb]
 ad         = settings[:ad]
 gluster    = settings[:gluster]
@@ -154,17 +155,23 @@ group_defs = {
     :install_pkgs => " glusterfs-server glusterfs-client",
     :services => [ "glusterd" ],
   },
+  :ganesha_servers => {
+    :install_pkgs => " nfs-ganesha nfs-ganesha-utils",
+    :services => [],
+  },
  :clients => {
     :install_pkgs => " cifs-utils glusterfs-fuse",
  },
 }
 if gluster[:setup_gluster]
   group_defs[:samba_servers][:install_pkgs] << " samba-vfs-glusterfs"
+  group_defs[:ganesha_servers][:install_pkgs] << " nfs-ganesha-gluster glusterfs-ganesha"
 end
 if not ctdb[:setup_ctdb]
   group_defs[:samba_servers][:services].push "winbind"
   group_defs[:samba_servers][:services].push "smb"
   group_defs[:samba_servers][:services].push "nmb"
+  group_defs[:ganesha_servers][:services].push "nfs-ganesha"
 end
 
 #==============================================================================
@@ -398,6 +405,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
             "extra_disks" => vms_common[:disks],
             "vips"        => vms_common[:virtual_ips],
             "samba"       => samba,
+            "ganesha"     => ganesha,
             "ctdb"        => ctdb,
             "ad"          => ad,
             "gluster"     => gluster,

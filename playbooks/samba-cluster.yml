@@ -197,6 +197,36 @@
       register: result
       until: result|success
 
+
+- hosts: samba_servers:ganesha_servers
+  name: Server Setup (CTDB)
+  sudo: yes
+
+  tasks:
+    - name: Deactivate certain NFS checks
+      command: "mv /etc/ctdb/nfs-checks.d/{{item}}.check /etc/ctdb/nfs-checks.d/{{item}}.disabled"
+      args:
+        creates: "/etc/ctdb/nfs-checks.d/{{item}}.disabled"
+        removes: "/etc/ctdb/nfs-checks.d/{{item}}.check"
+      with_items:
+        - 10.status
+        - 20.nfs
+        - 30.nlockmgr
+        - 40.mountd
+        - 50.rquotad
+      when: ctdb['setup_ctdb'] is defined and ctdb['setup_ctdb']
+
+    - name: Copy CTDB config files
+      template: src={{item.src}} dest={{item.dest}} owner=root group=root mode=0744
+      with_items:
+        - { src: "{% if ctdb['config'] is defined and ctdb['config'] %}{{ ctdb['config'] }}{% else %}'files/ctdb'{% endif %}", dest: '/etc/sysconfig/ctdb' }
+        - { src: 'files/nodes.j2', dest: '/etc/ctdb/nodes' }
+        - { src: 'files/public_addresses.j2', dest: '/etc/ctdb/public_addresses' }
+        - { src: 'files/nfs-ganesha-callout', dest: '/etc/ctdb/nfs-ganesha-callout' }
+        - { src: 'files/20.nfs_ganesha.check', dest: '/etc/ctdb/nfs-checks.d/20.nfs.check' }
+        - { src: 'files/60.nfs', dest: '/etc/ctdb/events.d/60.nfs' }
+      when: ctdb['setup_ctdb'] is defined and ctdb['setup_ctdb']
+
 - hosts: samba_servers
   name: Server Setup (SMB)
   sudo: yes
@@ -205,14 +235,6 @@
 #    - samba
 
   tasks:
-    - name: Copy CTDB config files
-      template: src={{item.src}} dest={{item.dest}} owner=root group=root mode=0744
-      with_items:
-        - { src: "{% if ctdb['config'] is defined and ctdb['config'] %}{{ ctdb['config'] }}{% else %}'files/ctdb'{% endif %}", dest: '/etc/sysconfig/ctdb' }
-        - { src: 'files/nodes.j2', dest: '/etc/ctdb/nodes' }
-        - { src: 'files/public_addresses.j2', dest: '/etc/ctdb/public_addresses' }
-      when: ctdb['setup_ctdb'] is defined and ctdb['setup_ctdb']
-
     - name: Copy Samba config files
       template: src={{item.src}} dest={{item.dest}} owner=root group=root mode=0744
       with_items:
@@ -223,6 +245,18 @@
       file: "path={{ samba['shares'][item]['path'] }} state=directory mode=0777"
       with_items: "{{ samba['shares'] }}"
       when: "samba['setup_samba'] is defined and samba['setup_samba'] and item and ('glusterfs:volume' not in samba['shares'][item].keys())"
+
+- hosts: ganesha_servers
+  name: Server Setup (NFS)
+  sudo: yes
+
+  tasks:
+    - name: Copy Ganesha config files
+      template: src={{item.src}} dest={{item.dest}} owner=root group=root mode=0744
+      with_items:
+        - { src: "files/ganesha.conf", dest: '/etc/ganesha/ganesha.conf' }
+        - { src: "files/nfs", dest: '/etc/sysconfig/nfs' }
+      when: ganesha['setup_ganesha'] is defined and ganesha['setup_ganesha']
 
 - hosts: ad_server
   name: Active Directory Setup
