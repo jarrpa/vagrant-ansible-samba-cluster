@@ -1,4 +1,5 @@
 CTDB_NODES=/etc/ctdb/nodes
+CTDB_PUBLIC_ADDRESSES=/etc/ctdb/public_addresses
 CTDB_RECOVERY_LOCK=/shared/lock/lockfile
 CTDB_MANAGES_SAMBA="yes"
 CTDB_MANAGES_WINBIND="yes"
