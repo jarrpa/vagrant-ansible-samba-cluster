@@ -89,7 +89,12 @@ custom_settings = {}
 f = File.join(projectdir, 'vagrant.yaml')
 
 if File.exists?(f)
-  custom_settings = YAML::load_file f
+  begin
+    custom_settings = YAML::load_file f
+    if custom_settings == false then raise end
+  rescue
+    retry
+  end
 else
   File.open(f, 'w') do |file|
     file.write settings.to_yaml
@@ -172,7 +177,12 @@ active_vms = []
 f = File.join(projectdir, 'active_vms.yaml')
 
 if File.exists?(f)
-  active_vms = YAML::load_file f
+  begin
+    active_vms = YAML::load_file f
+    if active_vms == false then raise end
+  rescue
+    retry
+  end
 end
 
 if ARGV[0] == "up"
