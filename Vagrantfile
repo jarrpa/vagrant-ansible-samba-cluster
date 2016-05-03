@@ -115,6 +115,10 @@ gluster    = settings[:gluster]
 #
 
 group_defs = {
+  :ctdb_servers => {
+    :install_pkgs => " ctdb",
+    :services => [ "ctdb" ],
+  },
   :samba_servers => {
     :install_pkgs => " samba samba-winbind samba-winbind-clients",
     :services => [],
@@ -123,10 +127,7 @@ group_defs = {
     :install_pkgs => " cifs-utils",
  },
 }
-if ctdb[:setup_ctdb]
-  group_defs[:samba_servers][:install_pkgs] << " ctdb"
-  group_defs[:samba_servers][:services].push "ctdb"
-else
+if not ctdb[:setup_ctdb]
   group_defs[:samba_servers][:services].push "winbind"
   group_defs[:samba_servers][:services].push "smb"
   group_defs[:samba_servers][:services].push "nmb"
