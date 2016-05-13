@@ -24,6 +24,7 @@ settings = {
   ],
   :vms_common => {
     :box => 'fedora/23-cloud-base',
+    :os => 'f23',
     :memory => 2048,
     :cpus => 2,
     :networks => [
@@ -379,7 +380,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       if ENV['RUN']
         playbooks.push(ENV['RUN'])
       else
-        playbooks.push("playbooks/raw-f23.yml")
+        playbooks.push("playbooks/raw-#{vms_common[:os]}.yml")
         custom_pre_provision = ENV['CUSTOM_PRE'] ? ENV['CUSTOM_PRE'] : "playbooks/custom_pre.yml"
         if File.exists?(custom_pre_provision)
           playbooks.push(custom_pre_provision)
