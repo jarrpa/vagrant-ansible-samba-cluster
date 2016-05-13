@@ -230,7 +230,7 @@ install_pkgs = {}
 services = {}
 if active_vms.length > 0
   active_vms.each do |name|
-    install_pkgs[name] = "yum python python-dnf python-simplejson yum libselinux-python xfsprogs gnupg "
+    install_pkgs[name] = "yum python python-dnf python-simplejson libselinux-python xfsprogs gnupg "
     if vms_common[:install_pkgs]
       install_pkgs[name] << " " + vms_common[:install_pkgs]
     end
@@ -252,13 +252,12 @@ if active_vms.length > 0
       end
     end
   end
-  vms.each do |vm|
-    if vm['install_pkgs']
-      install_pkgs[name] << " " + vm['install_pkgs']
-    end
-    if vm['services']
-      services[name].push vm[:services]
-    end
+  vm = vms.find_elements(:name, name)
+  if vm['install_pkgs']
+    install_pkgs[name] << " " + vm['install_pkgs']
+  end
+  if vm['services']
+    services[name].push vm[:services]
   end
 end
 
