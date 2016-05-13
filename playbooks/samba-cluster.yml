@@ -143,8 +143,10 @@
             {{ groups['gluster_servers']|count if groups['gluster_servers']|count > 1 else omit }}
           {%- elif item.replica is defined and item.replica == 0 -%}
             {{ omit }}
-          {%- else -%}
+          {%- elif groups['gluster_servers']|count >= (item.replica | default(gluster_default_replica)) -%}
             {{ item.replica | default(gluster_default_replica) }}
+          {%- else -%}
+            {{ omit }}
           {%- endif %}
         cluster: "{{ item.cluster | default(gluster_default_cluster) }}"
         options: "{{ item.opts|default(omit) }}"
