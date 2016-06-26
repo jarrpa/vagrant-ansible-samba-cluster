@@ -230,6 +230,8 @@ end
 groups.each do |name,group|
   if group.include? "all"
     groups[name] = active_vms
+  elsif group.include? "none"
+    groups[name] = []
   else
     group.each_with_index do |node,i|
       case node
@@ -275,11 +277,19 @@ if active_vms.length > 0
     if vms_common[:services]
       services[name].push vms_common[:services]
     end
+
+    vm = vms.detect {|x| x[:name] == name}
+    if vm['install_pkgs']
+      install_pkgs[name] << " " + vm['install_pkgs']
+    end
+    if vm['services']
+      services[name].push vm[:services]
+    end
   end
   groups.each do |name,group|
     group.each do |node|
       if group_defs and group_defs[name]
-        install_pkgs[node] << group_defs[name][:install_pkgs] if group_defs[name][:install_pkgs]
+        install_pkgs[node] << " " + group_defs[name][:install_pkgs] if group_defs[name][:install_pkgs]
         services[node].push group_defs[name][:services] if group_defs[name][:services]
       end
       if group_vars and group_vars[name]
@@ -287,13 +297,6 @@ if active_vms.length > 0
         services[node].push group_vars[name][:services] if group_vars[name][:services]
       end
     end
-  end
-  vm = vms.find_elements(:name, name)
-  if vm['install_pkgs']
-    install_pkgs[name] << " " + vm['install_pkgs']
-  end
-  if vm['services']
-    services[name].push vm[:services]
   end
 end
 
@@ -303,12 +306,6 @@ end
 #
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
-#  if Vagrant.has_plugin?("vagrant-cachier")
-#    config.cache.scope = :box
-#    config.cache.auto_detect = false
-#    config.cache.enable :yum
-#  end
-
   config.ssh.insert_key = false
 
   vms.each do |machine|
@@ -356,7 +353,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
           node.vm.synced_folder src, dest, syncopts
         end
       end
-
     end
   end
 
