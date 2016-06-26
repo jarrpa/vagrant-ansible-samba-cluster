@@ -1,0 +1,14 @@
+---
+- hosts: all
+  name: Raw Installation (RedHat/Fedora)
+  sudo: yes
+  gather_facts: False
+
+  tasks:
+    - name: Make sure playbook dependencies are installed
+      raw: >
+        sed -i 's/clean_requirements_on_remove=True/clean_requirements_on_remove=False/' /etc/dnf/dnf.conf;
+        for REPO in `find /vagrant/playbooks -name '*.repo'`; do
+          cp $REPO /etc/yum.repos.d/;
+        done;
+        dnf install -y --best @development-tools {{ install_pkgs }}

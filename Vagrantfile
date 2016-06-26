@@ -23,8 +23,8 @@ settings = {
     { :name => 'node4', },
   ],
   :vms_common => {
-    :box => 'fedora/23-cloud-base',
-    :os => 'f23',
+    :box => 'fedora/24-cloud-base',
+    :os => 'f24',
     :memory => 2048,
     :cpus => 2,
     :networks => [
