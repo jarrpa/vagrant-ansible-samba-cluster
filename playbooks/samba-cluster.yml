@@ -23,12 +23,12 @@
   tasks:
 #    - include: roles/common/tasks/setup-RedHat.yml
 
-- hosts: none
+- hosts: all
   name: Server Setup (Common)
   sudo: yes
 
-  roles:
-    - common
+#  roles:
+#    - common
 
   vars:
     - firewall_services:
@@ -44,6 +44,11 @@
   tasks:
     - name: Disable SELinux
       selinux: state=disabled
+
+    - name: "Build hosts file"
+      lineinfile: dest=/etc/hosts regexp='.*{{ item }}$' line="{{ hostvars[item].ansible_default_ipv4.address }} {{item}}" state=present
+      when: hostvars[item].ansible_default_ipv4.address is defined and gen_hosts_file
+      with_items: groups['all']
 
 - hosts: samba_servers:ganesha_servers
   name: Server Setup (CTDB)
