@@ -374,7 +374,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
       playbooks = []
       if ENV['RUN']
-        playbooks.push(ENV['RUN'])
+        playbooks.concat(ENV['RUN'].split(","))
       else
         playbooks.push("playbooks/raw-#{vms_common[:os]}.yml")
         custom_pre_provision = ENV['CUSTOM_PRE'] ? ENV['CUSTOM_PRE'] : "playbooks/custom_pre.yml"
